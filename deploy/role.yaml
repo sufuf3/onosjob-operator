@@ -1,6 +1,7 @@
-kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
+  creationTimestamp: null
   name: onosjob-operator
 rules:
 - apiGroups:
@@ -11,10 +12,11 @@ rules:
   - endpoints
   - persistentvolumeclaims
   - events
+  - jobs
   - configmaps
   - secrets
   verbs:
-  - "*"
+  - '*'
 - apiGroups:
   - apps
   resources:
@@ -23,19 +25,25 @@ rules:
   - replicasets
   - statefulsets
   verbs:
-  - "*"
+  - '*'
 - apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
   verbs:
-  - "get"
-  - "create"
+  - get
+  - create
 - apiGroups:
   - apps
-  resources:
-  - deployments/finalizers
   resourceNames:
   - onosjob-operator
+  resources:
+  - deployments/finalizers
   verbs:
-  - "update"
+  - update
+- apiGroups:
+  - onosjob.com
+  resources:
+  - '*'
+  verbs:
+  - '*'
