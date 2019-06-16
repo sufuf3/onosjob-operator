@@ -4,6 +4,7 @@ import (
 	"context"
 
 	onosjobv1alpha1 "github.com/sufuf3/onosjob-operator/pkg/apis/onosjob/v1alpha1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -101,19 +102,19 @@ func (r *ReconcileONOSJob) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 
 	// Define a new Pod object
-	pod := newPodForCR(instance)
+	job := newJobForCR(instance)
 
 	// Set ONOSJob instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	// Check if this Pod already exists
-	found := &corev1.Pod{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
+	found := &batchv1.Job{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: job.Name, Namespace: job.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-		err = r.client.Create(context.TODO(), pod)
+		reqLogger.Info("Creating a new Job", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+		err = r.client.Create(context.TODO(), job)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -124,28 +125,84 @@ func (r *ReconcileONOSJob) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 
-	// Pod already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+	// Job already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Job already exists", "Pod.Namespace", Job.Namespace, "Job.Name", found.Name)
 	return reconcile.Result{}, nil
 }
 
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *onosjobv1alpha1.ONOSJob) *corev1.Pod {
+// newJobForCR returns a busybox pod with the same name/namespace as the cr
+func newJobForCR(cr *onosjobv1alpha1.ONOSJob) *batchv1.Job {
 	labels := map[string]string{
 		"app": cr.Name,
 	}
-	return &corev1.Pod{
+	commands := []string{"date"}
+
+	if cr.Spec.Hosts != nil {
+		hostApiUrl := "http://" + cr.Spec.ControllerIp + ":"+cr.Spec.ControllerPort+"/onos/v1/hosts"
+
+		body := onosv1alpha1.Hosts{
+			Mac:         cr.Spec.Hosts[0].Mac,
+			Vlan:        cr.Spec.Hosts[0].Vlan,
+			IpAddresses: []string{cr.Spec.Hosts[0].IpAddresses[0]},
+			Locations: []onosv1alpha1.HostLocations{{
+				ElementId: cr.Spec.Hosts[0].Locations[0].ElementId,
+				Port:      cr.Spec.Hosts[0].Locations[0].Port,
+			}},
+		}
+		bodyJson, err := json.Marshal(body)
+		if err != nil {
+			return err
+		}
+
+		commands = append(commands, "&&", "curl", "-X", "POST", "--header", "'Content-Type:", "application/json'", "--header", "'Accept:", "application/json'", "-d", string(bodyJson), hostApiUrl)
+	}
+
+	if cr.Spec.FlowsDevice != nil {
+		fdApiUrl := "http://" + cr.Spec.ControllerIp + ":30120/onos/v1/flows/" + cr.Spec.FlowsDevice[0].Deviceid
+
+		body := onosv1alpha1.FlowsDevice{
+			Priority:    cr.Spec.FlowsDevice[0].Priority,
+			Timeout:     cr.Spec.FlowsDevice[0].Timeout,
+			IsPermanent: cr.Spec.FlowsDevice[0].IsPermanent,
+			Deviceid:    cr.Spec.FlowsDevice[0].Deviceid,
+			Instructions: []onosv1alpha1.FlowsDeviceInstructions{{
+				Type: cr.Spec.FlowsDevice[0].Instructions[0].Type,
+				Port: cr.Spec.FlowsDevice[0].Instructions[0].Port,
+			}},
+			Criteria: []onosv1alpha1.FlowsDeviceCriteria{{
+				Type:    cr.Spec.FlowsDevice[0].Criteria[0].Type,
+				EthType: cr.Spec.FlowsDevice[0].Criteria[0].EthType,
+			}},
+		}
+		bodyJson, err := json.Marshal(body)
+		if err != nil {
+			return err
+		}
+
+		commands = append(commands, "&&", "curl", "-X", "POST", "--header", "'Content-Type:", "application/json'", "--header", "'Accept:", "application/json'", "-d", string(bodyJson), fdApiUrl)
+	}
+
+	return &batchv1.Job{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Job",
+			APIVersion: "batch/v1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
+			Name:      cr.Name + "-job",
 			Namespace: cr.Namespace,
 			Labels:    labels,
 		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    "busybox",
-					Image:   "busybox",
-					Command: []string{"sleep", "3600"},
+		Spec: batchv1.JobSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:    "busybox",
+							Image:   "tutum/curl",
+							Command: commands,
+						},
+					},
+					RestartPolicy: corev1.RestartPolicyNever,
 				},
 			},
 		},
