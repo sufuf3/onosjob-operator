@@ -13,7 +13,7 @@ import (
 	"github.com/sufuf3/onosjob-operator/pkg/apis"
 	"github.com/sufuf3/onosjob-operator/pkg/controller"
 
-	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
+	//"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"github.com/operator-framework/operator-sdk/pkg/metrics"

@@ -2,6 +2,7 @@ package onosjob
 
 import (
 	"context"
+	"encoding/json"
 
 	onosjobv1alpha1 "github.com/sufuf3/onosjob-operator/pkg/apis/onosjob/v1alpha1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -126,7 +127,7 @@ func (r *ReconcileONOSJob) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 
 	// Job already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Job already exists", "Pod.Namespace", Job.Namespace, "Job.Name", found.Name)
+	reqLogger.Info("Skip reconcile: Job already exists", "Job.Namespace", found.Namespace, "Job.Name", found.Name)
 	return reconcile.Result{}, nil
 }
 
@@ -140,19 +141,16 @@ func newJobForCR(cr *onosjobv1alpha1.ONOSJob) *batchv1.Job {
 	if cr.Spec.Hosts != nil {
 		hostApiUrl := "http://" + cr.Spec.ControllerIp + ":"+cr.Spec.ControllerPort+"/onos/v1/hosts"
 
-		body := onosv1alpha1.Hosts{
+		body := onosjobv1alpha1.Hosts{
 			Mac:         cr.Spec.Hosts[0].Mac,
 			Vlan:        cr.Spec.Hosts[0].Vlan,
 			IpAddresses: []string{cr.Spec.Hosts[0].IpAddresses[0]},
-			Locations: []onosv1alpha1.HostLocations{{
+			Locations: []onosjobv1alpha1.HostLocations{{
 				ElementId: cr.Spec.Hosts[0].Locations[0].ElementId,
 				Port:      cr.Spec.Hosts[0].Locations[0].Port,
 			}},
 		}
-		bodyJson, err := json.Marshal(body)
-		if err != nil {
-			return err
-		}
+		bodyJson, _ := json.Marshal(body)
 
 		commands = append(commands, "&&", "curl", "-X", "POST", "--header", "'Content-Type:", "application/json'", "--header", "'Accept:", "application/json'", "-d", string(bodyJson), hostApiUrl)
 	}
@@ -160,24 +158,21 @@ func newJobForCR(cr *onosjobv1alpha1.ONOSJob) *batchv1.Job {
 	if cr.Spec.FlowsDevice != nil {
 		fdApiUrl := "http://" + cr.Spec.ControllerIp + ":30120/onos/v1/flows/" + cr.Spec.FlowsDevice[0].Deviceid
 
-		body := onosv1alpha1.FlowsDevice{
+		body := onosjobv1alpha1.FlowsDevice{
 			Priority:    cr.Spec.FlowsDevice[0].Priority,
 			Timeout:     cr.Spec.FlowsDevice[0].Timeout,
 			IsPermanent: cr.Spec.FlowsDevice[0].IsPermanent,
 			Deviceid:    cr.Spec.FlowsDevice[0].Deviceid,
-			Instructions: []onosv1alpha1.FlowsDeviceInstructions{{
+			Instructions: []onosjobv1alpha1.FlowsDeviceInstructions{{
 				Type: cr.Spec.FlowsDevice[0].Instructions[0].Type,
 				Port: cr.Spec.FlowsDevice[0].Instructions[0].Port,
 			}},
-			Criteria: []onosv1alpha1.FlowsDeviceCriteria{{
+			Criteria: []onosjobv1alpha1.FlowsDeviceCriteria{{
 				Type:    cr.Spec.FlowsDevice[0].Criteria[0].Type,
 				EthType: cr.Spec.FlowsDevice[0].Criteria[0].EthType,
 			}},
 		}
-		bodyJson, err := json.Marshal(body)
-		if err != nil {
-			return err
-		}
+		bodyJson, _ := json.Marshal(body)
 
 		commands = append(commands, "&&", "curl", "-X", "POST", "--header", "'Content-Type:", "application/json'", "--header", "'Accept:", "application/json'", "-d", string(bodyJson), fdApiUrl)
 	}
