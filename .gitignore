@@ -61,6 +61,15 @@ anaconda-mode/
 *.test
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+### Vagrant ###
+# General
+.vagrant/
+
+# Log files (if you are creating logs in debug mode, uncomment this)
+*.logs
+
+### Vagrant Patch ###
+*.box
 ### Vim ###
 # swap
 .sw[a-p]
