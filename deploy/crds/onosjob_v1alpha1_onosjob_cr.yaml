@@ -3,8 +3,8 @@ kind: ONOSJob
 metadata:
   name: example-onosjob
 spec:
-  controllerIp: 10.0.2.15
-  controllerPort: 30120
+  controller-ip: 10.0.2.15
+  controller-port: 30120
   hosts:
   - mac: 46:E4:3C:C4:17:C8
     vlan: "None"
@@ -13,14 +13,14 @@ spec:
     locations:
     - elementId: of:0000000000000001
       port: 8
-  flowsDevice:
-  - deviceid: of:0000000000000001
+  flows-device:
+  - deviceId: of:0000000000000001
     priority: 40000
     isPermanent: true
     timeout: 0
     instructions:
-    - type: OUTPUT
-      port: CONTROLLER
+    - type: "output"
+      port: "controller"
     criteria:
-    - type: ETH_TYPE
+    - type: "eth_type"
       ethType: 0x88cc

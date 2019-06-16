@@ -10,8 +10,8 @@ import (
 // ONOSJobSpec defines the desired state of ONOSJob
 // +k8s:openapi-gen=true
 type ONOSJobSpec struct {
-	ControllerIp   string        `json:"controllerIp"`
-	ControllerPort string        `json:"controllerPort"`
+	ControllerIp   string        `json:"controller-ip"`
+	ControllerPort string        `json:"controller-port"`
 	Hosts          []Hosts       `json:"hosts" validate:"-"`
 	FlowsDevice    []FlowsDevice `json:"flowsDevice" validate:"-"`
 }
@@ -34,7 +34,7 @@ type HostLocations struct {
 }
 
 type FlowsDevice struct {
-	Deviceid     string                    `json:"deviceid"`
+	Deviceid     string                    `json:"deviceId"`
 	Priority     int32                     `json:"priority"`
 	IsPermanent  bool                      `json:"isPermanent"`
 	Timeout      int32                     `json:"timeout"`
@@ -44,7 +44,7 @@ type FlowsDevice struct {
 
 type FlowsDeviceInstructions struct {
 	Type string `json:"type"`
-	Port int32  `json:"port"`
+	Port string  `json:"port"`
 }
 type FlowsDeviceCriteria struct {
 	Type    string `json:"type"`
