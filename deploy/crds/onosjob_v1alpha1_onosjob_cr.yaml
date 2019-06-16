@@ -3,5 +3,24 @@ kind: ONOSJob
 metadata:
   name: example-onosjob
 spec:
-  # Add fields here
-  size: 3
+  controllerIp: 10.0.2.15
+  controllerPort: 30120
+  hosts:
+  - mac: 46:E4:3C:C4:17:C8
+    vlan: "None"
+    ipAddresses:
+    - 10.0.0.8
+    locations:
+    - elementId: of:0000000000000001
+      port: 8
+  flowsDevice:
+  - deviceid: of:0000000000000001
+    priority: 40000
+    isPermanent: true
+    timeout: 0
+    instructions:
+    - type: OUTPUT
+      port: CONTROLLER
+    criteria:
+    - type: ETH_TYPE
+      ethType: 0x88cc
