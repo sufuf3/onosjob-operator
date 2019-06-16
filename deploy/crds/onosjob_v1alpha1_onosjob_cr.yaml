@@ -1,0 +1,7 @@
+apiVersion: onosjob.com/v1alpha1
+kind: ONOSJob
+metadata:
+  name: example-onosjob
+spec:
+  # Add fields here
+  size: 3
