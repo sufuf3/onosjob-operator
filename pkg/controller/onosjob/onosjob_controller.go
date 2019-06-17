@@ -3,6 +3,8 @@ package onosjob
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"strconv"
 
 	onosjobv1alpha1 "github.com/sufuf3/onosjob-operator/pkg/apis/onosjob/v1alpha1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -136,11 +138,13 @@ func newJobForCR(cr *onosjobv1alpha1.ONOSJob) *batchv1.Job {
 	labels := map[string]string{
 		"app": cr.Name,
 	}
-	commands := []string{"date"}
+	commandString := "echo starting; "
+	commands := []string{}
+	//commands = append(commands, "echo starting;")
 
 	if cr.Spec.Hosts != nil {
 		hostApiUrl := "http://" + cr.Spec.ControllerIp + ":"+cr.Spec.ControllerPort+"/onos/v1/hosts"
-
+		fmt.Println(hostApiUrl)
 		body := onosjobv1alpha1.Hosts{
 			Mac:         cr.Spec.Hosts[0].Mac,
 			Vlan:        cr.Spec.Hosts[0].Vlan,
@@ -151,31 +155,34 @@ func newJobForCR(cr *onosjobv1alpha1.ONOSJob) *batchv1.Job {
 			}},
 		}
 		bodyJson, _ := json.Marshal(body)
-
-		commands = append(commands, "&&", "curl", "-X", "POST", "--header", "'Content-Type:", "application/json'", "--header", "'Accept:", "application/json'", "-d", string(bodyJson), hostApiUrl)
+		fmt.Println(string(bodyJson))
+		//commands = append(commands, "curl", "-v", "-X", "POST", "-H", "Content-Type: application/json", "-H", "Accept: application/json", "--user", "onos:rocks", hostApiUrl, "-d", "'"+string(bodyJson)+"'")
+		commandString = commandString + "curl -v POST -H Content-Type: application/json -H Accept: application/json --user onos:rocks "+hostApiUrl+" -d '"+string(bodyJson)+"'; "
+		//commands = append(commands, commandString)
 	}
 
 	if cr.Spec.FlowsDevice != nil {
-		fdApiUrl := "http://" + cr.Spec.ControllerIp + ":30120/onos/v1/flows/" + cr.Spec.FlowsDevice[0].Deviceid
+		fdApiUrl := "http://" + cr.Spec.ControllerIp + ":"+cr.Spec.ControllerPort+"/onos/v1/flows/" + cr.Spec.FlowsDevice[0].Deviceid+"?appId="+cr.Spec.FlowsDevice[0].Appid
 
-		body := onosjobv1alpha1.FlowsDevice{
-			Priority:    cr.Spec.FlowsDevice[0].Priority,
-			Timeout:     cr.Spec.FlowsDevice[0].Timeout,
-			IsPermanent: cr.Spec.FlowsDevice[0].IsPermanent,
-			Deviceid:    cr.Spec.FlowsDevice[0].Deviceid,
-			Instructions: []onosjobv1alpha1.FlowsDeviceInstructions{{
-				Type: cr.Spec.FlowsDevice[0].Instructions[0].Type,
-				Port: cr.Spec.FlowsDevice[0].Instructions[0].Port,
-			}},
-			Criteria: []onosjobv1alpha1.FlowsDeviceCriteria{{
-				Type:    cr.Spec.FlowsDevice[0].Criteria[0].Type,
-				EthType: cr.Spec.FlowsDevice[0].Criteria[0].EthType,
-			}},
-		}
-		bodyJson, _ := json.Marshal(body)
+		body := "{\"priority\": "+ strconv.FormatInt(cr.Spec.FlowsDevice[0].Priority, 10)+", \"timeout\": " + strconv.FormatInt(cr.Spec.FlowsDevice[0].Timeout, 10) + ", \"isPermanent\": " + strconv.FormatBool(cr.Spec.FlowsDevice[0].IsPermanent) +", \"deviceId\": \"" +cr.Spec.FlowsDevice[0].Deviceid +"\", \"treatment\": { \"instructions\": [{\"type\": \"" +cr.Spec.FlowsDevice[0].Instructions[0].Type+ "\", \"port\": \""+cr.Spec.FlowsDevice[0].Instructions[0].Port+"\"}]}, \"selector\": { \"criteria\": [{ \"type\": \""+cr.Spec.FlowsDevice[0].Criteria[0].Type+"\", \"ethType\": \""+cr.Spec.FlowsDevice[0].Criteria[0].EthType+"\"}]}}"
+		bodyJson := body
 
-		commands = append(commands, "&&", "curl", "-X", "POST", "--header", "'Content-Type:", "application/json'", "--header", "'Accept:", "application/json'", "-d", string(bodyJson), fdApiUrl)
+		fmt.Println(string(bodyJson))
+		commandString = commandString + "curl -v POST -H Content-Type: application/json -H Accept: application/json --user onos:rocks "+fdApiUrl+" -d '"+string(bodyJson)+"'; "
+		//commands = append(commands, commandString)
+		/*if cr.Spec.Hosts == nil {
+			commands = append(commands, "curl", "-v", "-X", "POST", "-H", "Content-Type: application/json", "-H", "Accept: application/json", "--user", "onos:rocks", fdApiUrl, "-d", string(bodyJson))
+		} else {
+			commands = append(commands, "&&", "curl", "-v", "-X", "POST", "-H", "Content-Type: application/json", "-H", "Accept: application/json", "--user", "onos:rocks", fdApiUrl, "-d", string(bodyJson))
+		}*/
 	}
+	//fmt.Println(commands)
+	if cr.Spec.Hosts == nil && cr.Spec.FlowsDevice == nil {
+		commandString = commandString + "date; "
+	}
+	commandString = commandString + "echo done;"
+	fmt.Println(commandString)
+	commands = append(commands, commandString)
 
 	return &batchv1.Job{
 		TypeMeta: metav1.TypeMeta{
@@ -193,8 +200,9 @@ func newJobForCR(cr *onosjobv1alpha1.ONOSJob) *batchv1.Job {
 					Containers: []corev1.Container{
 						{
 							Name:    "busybox",
-							Image:   "tutum/curl",
-							Command: commands,
+							Image:   "everpeace/curl-jq",
+							Command: []string{"/bin/sh", "-c"},
+							Args: commands,
 						},
 					},
 					RestartPolicy: corev1.RestartPolicyNever,

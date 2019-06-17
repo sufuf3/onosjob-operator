@@ -12,8 +12,8 @@ import (
 type ONOSJobSpec struct {
 	ControllerIp   string        `json:"controller-ip"`
 	ControllerPort string        `json:"controller-port"`
-	Hosts          []Hosts       `json:"hosts" validate:"-"`
-	FlowsDevice    []FlowsDevice `json:"flowsDevice" validate:"-"`
+	Hosts          []Hosts       `json:"hosts,omitempty" validate:"-"`
+	FlowsDevice    []FlowsDevice `json:"flowsDevice,omitempty" validate:"-"`
 }
 
 // ONOSJobStatus defines the observed state of ONOSJob
@@ -35,9 +35,10 @@ type HostLocations struct {
 
 type FlowsDevice struct {
 	Deviceid     string                    `json:"deviceId"`
-	Priority     int32                     `json:"priority"`
+	Appid     string                    `json:"appId,omitempty"`
+	Priority     int64                     `json:"priority"`
 	IsPermanent  bool                      `json:"isPermanent"`
-	Timeout      int32                     `json:"timeout"`
+	Timeout      int64                     `json:"timeout"`
 	Instructions []FlowsDeviceInstructions `json:"instructions"`
 	Criteria     []FlowsDeviceCriteria     `json:"criteria"`
 }
