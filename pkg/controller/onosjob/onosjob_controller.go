@@ -140,10 +140,9 @@ func newJobForCR(cr *onosjobv1alpha1.ONOSJob) *batchv1.Job {
 	}
 	commandString := "echo starting; "
 	commands := []string{}
-	//commands = append(commands, "echo starting;")
 
 	if cr.Spec.Hosts != nil {
-		hostApiUrl := "http://" + cr.Spec.ControllerIp + ":"+cr.Spec.ControllerPort+"/onos/v1/hosts"
+		hostApiUrl := "http://" + cr.Spec.ControllerIp + ":" + cr.Spec.ControllerPort + "/onos/v1/hosts"
 		fmt.Println(hostApiUrl)
 		body := onosjobv1alpha1.Hosts{
 			Mac:         cr.Spec.Hosts[0].Mac,
@@ -156,27 +155,18 @@ func newJobForCR(cr *onosjobv1alpha1.ONOSJob) *batchv1.Job {
 		}
 		bodyJson, _ := json.Marshal(body)
 		fmt.Println(string(bodyJson))
-		//commands = append(commands, "curl", "-v", "-X", "POST", "-H", "Content-Type: application/json", "-H", "Accept: application/json", "--user", "onos:rocks", hostApiUrl, "-d", "'"+string(bodyJson)+"'")
-		commandString = commandString + "curl -v POST -H Content-Type: application/json -H Accept: application/json --user onos:rocks "+hostApiUrl+" -d '"+string(bodyJson)+"'; "
-		//commands = append(commands, commandString)
+		commandString = commandString + "curl -v POST -H Content-Type: application/json -H Accept: application/json --user onos:rocks " + hostApiUrl + " -d '" + string(bodyJson) + "'; "
 	}
 
 	if cr.Spec.FlowsDevice != nil {
-		fdApiUrl := "http://" + cr.Spec.ControllerIp + ":"+cr.Spec.ControllerPort+"/onos/v1/flows/" + cr.Spec.FlowsDevice[0].Deviceid+"?appId="+cr.Spec.FlowsDevice[0].Appid
+		fdApiUrl := "http://" + cr.Spec.ControllerIp + ":" + cr.Spec.ControllerPort + "/onos/v1/flows/" + cr.Spec.FlowsDevice[0].Deviceid + "?appId=" + cr.Spec.FlowsDevice[0].Appid
 
-		body := "{\"priority\": "+ strconv.FormatInt(cr.Spec.FlowsDevice[0].Priority, 10)+", \"timeout\": " + strconv.FormatInt(cr.Spec.FlowsDevice[0].Timeout, 10) + ", \"isPermanent\": " + strconv.FormatBool(cr.Spec.FlowsDevice[0].IsPermanent) +", \"deviceId\": \"" +cr.Spec.FlowsDevice[0].Deviceid +"\", \"treatment\": { \"instructions\": [{\"type\": \"" +cr.Spec.FlowsDevice[0].Instructions[0].Type+ "\", \"port\": \""+cr.Spec.FlowsDevice[0].Instructions[0].Port+"\"}]}, \"selector\": { \"criteria\": [{ \"type\": \""+cr.Spec.FlowsDevice[0].Criteria[0].Type+"\", \"ethType\": \""+cr.Spec.FlowsDevice[0].Criteria[0].EthType+"\"}]}}"
+		body := "{\"priority\": " + strconv.FormatInt(cr.Spec.FlowsDevice[0].Priority, 10) + ", \"timeout\": " + strconv.FormatInt(cr.Spec.FlowsDevice[0].Timeout, 10) + ", \"isPermanent\": " + strconv.FormatBool(cr.Spec.FlowsDevice[0].IsPermanent) + ", \"deviceId\": \"" + cr.Spec.FlowsDevice[0].Deviceid + "\", \"treatment\": { \"instructions\": [{\"type\": \"" + cr.Spec.FlowsDevice[0].Instructions[0].Type + "\", \"port\": \"" + cr.Spec.FlowsDevice[0].Instructions[0].Port + "\"}]}, \"selector\": { \"criteria\": [{ \"type\": \"" + cr.Spec.FlowsDevice[0].Criteria[0].Type + "\", \"ethType\": \"" + cr.Spec.FlowsDevice[0].Criteria[0].EthType + "\"}]}}"
 		bodyJson := body
 
 		fmt.Println(string(bodyJson))
-		commandString = commandString + "curl -v POST -H Content-Type: application/json -H Accept: application/json --user onos:rocks "+fdApiUrl+" -d '"+string(bodyJson)+"'; "
-		//commands = append(commands, commandString)
-		/*if cr.Spec.Hosts == nil {
-			commands = append(commands, "curl", "-v", "-X", "POST", "-H", "Content-Type: application/json", "-H", "Accept: application/json", "--user", "onos:rocks", fdApiUrl, "-d", string(bodyJson))
-		} else {
-			commands = append(commands, "&&", "curl", "-v", "-X", "POST", "-H", "Content-Type: application/json", "-H", "Accept: application/json", "--user", "onos:rocks", fdApiUrl, "-d", string(bodyJson))
-		}*/
+		commandString = commandString + "curl -v POST -H Content-Type: application/json -H Accept: application/json --user onos:rocks " + fdApiUrl + " -d '" + string(bodyJson) + "'; "
 	}
-	//fmt.Println(commands)
 	if cr.Spec.Hosts == nil && cr.Spec.FlowsDevice == nil {
 		commandString = commandString + "date; "
 	}
@@ -202,7 +192,7 @@ func newJobForCR(cr *onosjobv1alpha1.ONOSJob) *batchv1.Job {
 							Name:    "busybox",
 							Image:   "everpeace/curl-jq",
 							Command: []string{"/bin/sh", "-c"},
-							Args: commands,
+							Args:    commands,
 						},
 					},
 					RestartPolicy: corev1.RestartPolicyNever,

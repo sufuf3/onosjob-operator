@@ -35,7 +35,7 @@ type HostLocations struct {
 
 type FlowsDevice struct {
 	Deviceid     string                    `json:"deviceId"`
-	Appid     string                    `json:"appId,omitempty"`
+	Appid        string                    `json:"appId,omitempty"`
 	Priority     int64                     `json:"priority"`
 	IsPermanent  bool                      `json:"isPermanent"`
 	Timeout      int64                     `json:"timeout"`
@@ -45,12 +45,13 @@ type FlowsDevice struct {
 
 type FlowsDeviceInstructions struct {
 	Type string `json:"type"`
-	Port string  `json:"port"`
+	Port string `json:"port"`
 }
 type FlowsDeviceCriteria struct {
 	Type    string `json:"type"`
 	EthType string `json:"ethType"`
 }
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ONOSJob is the Schema for the onosjobs API
