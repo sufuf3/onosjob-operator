@@ -6,6 +6,6 @@ subjects:
 - kind: ServiceAccount
   name: onosjob-operator
 roleRef:
-  kind: Role
+  kind: ClusterRole
   name: onosjob-operator
   apiGroup: rbac.authorization.k8s.io

@@ -16,7 +16,7 @@ spec:
       containers:
         - name: onosjob-operator
           # Replace this with the built image name
-          image: REPLACE_IMAGE
+          image: sufuf3/onosjob-operator:v0.1.0
           command:
           - onosjob-operator
           imagePullPolicy: Always
