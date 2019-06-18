@@ -102,7 +102,7 @@ curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 helm repo add cord https://charts.opencord.org
 helm repo update
 helm install -n onos cord/onos
-kubectl create -f ~/labsetup/mininet-deployment.yaml
+apt install -y mininet
 SHELL
 
 $apt_openvswitch = <<SHELL
