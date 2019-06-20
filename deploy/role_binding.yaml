@@ -4,6 +4,7 @@ metadata:
   name: onosjob-operator
 subjects:
 - kind: ServiceAccount
+  namespace: default
   name: onosjob-operator
 roleRef:
   kind: ClusterRole
